@@ -24,13 +24,13 @@ helios-verifiable-api-client = { path = "../client" }
 helios-verifiable-api-types = { path = "../types" }
 helios-common = { path = "../../common" }
 helios-core = { path = "../../core" }
-helios-ethereum = { path = "../../ethereum" }
-helios-opstack = { path = "../../opstack" }
+#helios-ethereum = { path = "../../ethereum" }
+#helios-opstack = { path = "../../opstack" }
 
 axum.workspace = true
 axum-extra = { workspace = true, features = ["query"] }
 clap = { workspace = true, features = ["derive", "env"] }
 
 [dev-dependencies]
-helios-test-utils = { path = "../../tests/test-utils" }
+#helios-test-utils = { path = "../../tests/test-utils" }
 tokio.workspace = true

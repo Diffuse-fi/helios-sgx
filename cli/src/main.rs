@@ -13,19 +13,19 @@ use dirs::home_dir;
 use eyre::Result;
 use figment::{providers::Serialized, value::Value};
 use futures::executor::block_on;
-use helios_common::network_spec::NetworkSpec;
+// use helios_common::network_spec::NetworkSpec;
 use helios_core::{client::Client, consensus::Consensus};
-use helios_ethereum::{
-    config::{cli::CliConfig, Config as EthereumConfig},
-    database::FileDB,
-    EthereumClient, EthereumClientBuilder,
-};
-use helios_linea::{
-    builder::LineaClientBuilder,
-    config::{CliConfig as LineaCliConfig, Config as LineaConfig},
-    types::LineaClient,
-};
-use helios_opstack::{config::Config as OpStackConfig, OpStackClient, OpStackClientBuilder};
+// use helios_ethereum::{
+//     config::{cli::CliConfig, Config as EthereumConfig},
+//     database::FileDB,
+//     EthereumClient, EthereumClientBuilder,
+// };
+// use helios_linea::{
+//     builder::LineaClientBuilder,
+//     config::{CliConfig as LineaCliConfig, Config as LineaConfig},
+//     types::LineaClient,
+// };
+// use helios_opstack::{config::Config as OpStackConfig, OpStackClient, OpStackClientBuilder};
 use tracing::{error, info};
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -121,197 +121,197 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    #[command(name = "ethereum")]
-    Ethereum(EthereumArgs),
-    #[command(name = "opstack")]
-    OpStack(OpStackArgs),
-    #[command(name = "linea")]
-    Linea(LineaArgs),
+    // #[command(name = "ethereum")]
+    // Ethereum(EthereumArgs),
+    // #[command(name = "opstack")]
+    // OpStack(OpStackArgs),
+    // #[command(name = "linea")]
+    // Linea(LineaArgs),
 }
-
-#[derive(Args)]
-struct EthereumArgs {
-    #[arg(short, long, default_value = "mainnet")]
-    network: String,
-    #[arg(short = 'b', long, env)]
-    rpc_bind_ip: Option<IpAddr>,
-    #[arg(short = 'p', long, env)]
-    rpc_port: Option<u16>,
-    #[arg(short = 'w', long, env)]
-    checkpoint: Option<B256>,
-    #[arg(short, long, env, value_parser = parse_url)]
-    execution_rpc: Option<Url>,
-    #[arg(long, env, value_parser = parse_url)]
-    execution_verifiable_api: Option<Url>,
-    #[arg(short, long, env, value_parser = parse_url)]
-    consensus_rpc: Option<Url>,
-    #[arg(short, long, env)]
-    data_dir: Option<String>,
-    #[arg(short = 'f', long, env)]
-    fallback: Option<String>,
-    #[arg(short = 'l', long, env)]
-    load_external_fallback: bool,
-    #[arg(short = 's', long, env)]
-    strict_checkpoint_age: bool,
-}
-
-impl EthereumArgs {
-    fn make_client(&self) -> EthereumClient<FileDB> {
-        let config_path = home_dir().unwrap().join(".helios/helios.toml");
-        let cli_config = self.as_cli_config();
-        let config = EthereumConfig::from_file(&config_path, &self.network, &cli_config);
-
-        match EthereumClientBuilder::new()
-            .config(config)
-            .build::<FileDB>()
-        {
-            Ok(client) => client,
-            Err(err) => {
-                error!(target: "helios::runner", error = %err);
-                exit(1);
-            }
-        }
-    }
-
-    fn as_cli_config(&self) -> CliConfig {
-        CliConfig {
-            checkpoint: self.checkpoint,
-            execution_rpc: self.execution_rpc.clone(),
-            execution_verifiable_api: self.execution_verifiable_api.clone(),
-            consensus_rpc: self.consensus_rpc.clone(),
-            data_dir: self
-                .data_dir
-                .as_ref()
-                .map(|s| PathBuf::from_str(s).expect("cannot find data dir")),
-            rpc_bind_ip: self.rpc_bind_ip,
-            rpc_port: self.rpc_port,
-            fallback: self.fallback.clone(),
-            load_external_fallback: true_or_none(self.load_external_fallback),
-            strict_checkpoint_age: true_or_none(self.strict_checkpoint_age),
-        }
-    }
-}
-
-#[derive(Args, Debug)]
-struct OpStackArgs {
-    #[arg(short, long)]
-    network: String,
-    #[arg(short = 'b', long, env, default_value = "127.0.0.1")]
-    rpc_bind_ip: Option<IpAddr>,
-    #[arg(short = 'p', long, env, default_value = "8545")]
-    rpc_port: Option<u16>,
-    #[arg(short, long, env, value_parser = parse_url)]
-    execution_rpc: Option<Url>,
-    #[arg(long, env, value_parser = parse_url)]
-    execution_verifiable_api: Option<Url>,
-    #[arg(short, long, env, value_parser = parse_url)]
-    consensus_rpc: Option<Url>,
-    #[arg(
-        short = 'w',
-        long = "ethereum-checkpoint",
-        env = "ETHEREUM_CHECKPOINT",
-        help = "Set custom weak subjectivity checkpoint for chosen Ethereum network. Helios uses this to sync and trustlessly fetch the correct unsafe signer address used by <NETWORK>"
-    )]
-    checkpoint: Option<B256>,
-    #[arg(
-        short = 'l',
-        long = "ethereum-load-external-fallback",
-        env = "ETHEREUM_LOAD_EXTERNAL_FALLBACK",
-        help = "Enable fallback for weak subjectivity checkpoint. Use if --ethereum-checkpoint fails."
-    )]
-    load_external_fallback: bool,
-}
-
-impl OpStackArgs {
-    fn make_client(&self) -> OpStackClient {
-        let config_path = home_dir().unwrap().join(".helios/helios.toml");
-        let cli_provider = self.as_provider();
-        let config = OpStackConfig::from_file(&config_path, &self.network, cli_provider);
-
-        match OpStackClientBuilder::new().config(config).build() {
-            Ok(client) => client,
-            Err(err) => {
-                error!(target: "helios::runner", error = %err);
-                exit(1);
-            }
-        }
-    }
-
-    fn as_provider(&self) -> Serialized<HashMap<&str, Value>> {
-        let mut user_dict = HashMap::new();
-
-        if let Some(rpc) = &self.execution_rpc {
-            user_dict.insert("execution_rpc", Value::from(rpc.to_string()));
-        }
-
-        if let Some(api) = &self.execution_verifiable_api {
-            user_dict.insert("execution_verifiable_api", Value::from(api.to_string()));
-        }
-
-        if let Some(rpc) = &self.consensus_rpc {
-            user_dict.insert("consensus_rpc", Value::from(rpc.to_string()));
-        }
-
-        if self.rpc_bind_ip.is_some() && self.rpc_port.is_some() {
-            let rpc_socket = SocketAddr::new(self.rpc_bind_ip.unwrap(), self.rpc_port.unwrap());
-            user_dict.insert("rpc_socket", Value::from(rpc_socket.to_string()));
-        }
-
-        if let Some(ip) = self.rpc_bind_ip {
-            user_dict.insert("rpc_bind_ip", Value::from(ip.to_string()));
-        }
-
-        if let Some(port) = self.rpc_port {
-            user_dict.insert("rpc_port", Value::from(port));
-        }
-
-        if self.load_external_fallback {
-            user_dict.insert("load_external_fallback", Value::from(true));
-        }
-
-        if let Some(checkpoint) = self.checkpoint {
-            user_dict.insert("checkpoint", Value::from(hex::encode(checkpoint)));
-        }
-
-        Serialized::from(user_dict, &self.network)
-    }
-}
-
-#[derive(Args, Debug)]
-struct LineaArgs {
-    #[arg(short, long, default_value = "linea")]
-    network: String,
-    #[arg(short = 'b', long, env)]
-    rpc_bind_ip: Option<IpAddr>,
-    #[arg(short = 'p', long, env)]
-    rpc_port: Option<u16>,
-    #[arg(short, long, env, value_parser = parse_url)]
-    execution_rpc: Option<Url>,
-}
-
-impl LineaArgs {
-    fn make_client(&self) -> LineaClient {
-        let config_path = home_dir().unwrap().join(".helios/helios.toml");
-        let cli_config = self.as_cli_config();
-        let config = LineaConfig::from_file(&config_path, &self.network, &cli_config);
-
-        match LineaClientBuilder::new().config(config).build() {
-            Ok(client) => client,
-            Err(err) => {
-                error!(target: "helios::runner", error = %err);
-                exit(1);
-            }
-        }
-    }
-
-    fn as_cli_config(&self) -> LineaCliConfig {
-        LineaCliConfig {
-            execution_rpc: self.execution_rpc.clone(),
-            rpc_bind_ip: self.rpc_bind_ip,
-            rpc_port: self.rpc_port,
-        }
-    }
-}
+//
+// #[derive(Args)]
+// struct EthereumArgs {
+//     #[arg(short, long, default_value = "mainnet")]
+//     network: String,
+//     #[arg(short = 'b', long, env)]
+//     rpc_bind_ip: Option<IpAddr>,
+//     #[arg(short = 'p', long, env)]
+//     rpc_port: Option<u16>,
+//     #[arg(short = 'w', long, env)]
+//     checkpoint: Option<B256>,
+//     #[arg(short, long, env, value_parser = parse_url)]
+//     execution_rpc: Option<Url>,
+//     #[arg(long, env, value_parser = parse_url)]
+//     execution_verifiable_api: Option<Url>,
+//     #[arg(short, long, env, value_parser = parse_url)]
+//     consensus_rpc: Option<Url>,
+//     #[arg(short, long, env)]
+//     data_dir: Option<String>,
+//     #[arg(short = 'f', long, env)]
+//     fallback: Option<String>,
+//     #[arg(short = 'l', long, env)]
+//     load_external_fallback: bool,
+//     #[arg(short = 's', long, env)]
+//     strict_checkpoint_age: bool,
+// }
+//
+// impl EthereumArgs {
+//     fn make_client(&self) -> EthereumClient<FileDB> {
+//         let config_path = home_dir().unwrap().join(".helios/helios.toml");
+//         let cli_config = self.as_cli_config();
+//         let config = EthereumConfig::from_file(&config_path, &self.network, &cli_config);
+//
+//         match EthereumClientBuilder::new()
+//             .config(config)
+//             .build::<FileDB>()
+//         {
+//             Ok(client) => client,
+//             Err(err) => {
+//                 error!(target: "helios::runner", error = %err);
+//                 exit(1);
+//             }
+//         }
+//     }
+//
+//     fn as_cli_config(&self) -> CliConfig {
+//         CliConfig {
+//             checkpoint: self.checkpoint,
+//             execution_rpc: self.execution_rpc.clone(),
+//             execution_verifiable_api: self.execution_verifiable_api.clone(),
+//             consensus_rpc: self.consensus_rpc.clone(),
+//             data_dir: self
+//                 .data_dir
+//                 .as_ref()
+//                 .map(|s| PathBuf::from_str(s).expect("cannot find data dir")),
+//             rpc_bind_ip: self.rpc_bind_ip,
+//             rpc_port: self.rpc_port,
+//             fallback: self.fallback.clone(),
+//             load_external_fallback: true_or_none(self.load_external_fallback),
+//             strict_checkpoint_age: true_or_none(self.strict_checkpoint_age),
+//         }
+//     }
+// }
+//
+// #[derive(Args, Debug)]
+// struct OpStackArgs {
+//     #[arg(short, long)]
+//     network: String,
+//     #[arg(short = 'b', long, env, default_value = "127.0.0.1")]
+//     rpc_bind_ip: Option<IpAddr>,
+//     #[arg(short = 'p', long, env, default_value = "8545")]
+//     rpc_port: Option<u16>,
+//     #[arg(short, long, env, value_parser = parse_url)]
+//     execution_rpc: Option<Url>,
+//     #[arg(long, env, value_parser = parse_url)]
+//     execution_verifiable_api: Option<Url>,
+//     #[arg(short, long, env, value_parser = parse_url)]
+//     consensus_rpc: Option<Url>,
+//     #[arg(
+//         short = 'w',
+//         long = "ethereum-checkpoint",
+//         env = "ETHEREUM_CHECKPOINT",
+//         help = "Set custom weak subjectivity checkpoint for chosen Ethereum network. Helios uses this to sync and trustlessly fetch the correct unsafe signer address used by <NETWORK>"
+//     )]
+//     checkpoint: Option<B256>,
+//     #[arg(
+//         short = 'l',
+//         long = "ethereum-load-external-fallback",
+//         env = "ETHEREUM_LOAD_EXTERNAL_FALLBACK",
+//         help = "Enable fallback for weak subjectivity checkpoint. Use if --ethereum-checkpoint fails."
+//     )]
+//     load_external_fallback: bool,
+// }
+//
+// impl OpStackArgs {
+//     fn make_client(&self) -> OpStackClient {
+//         let config_path = home_dir().unwrap().join(".helios/helios.toml");
+//         let cli_provider = self.as_provider();
+//         let config = OpStackConfig::from_file(&config_path, &self.network, cli_provider);
+//
+//         match OpStackClientBuilder::new().config(config).build() {
+//             Ok(client) => client,
+//             Err(err) => {
+//                 error!(target: "helios::runner", error = %err);
+//                 exit(1);
+//             }
+//         }
+//     }
+//
+//     fn as_provider(&self) -> Serialized<HashMap<&str, Value>> {
+//         let mut user_dict = HashMap::new();
+//
+//         if let Some(rpc) = &self.execution_rpc {
+//             user_dict.insert("execution_rpc", Value::from(rpc.to_string()));
+//         }
+//
+//         if let Some(api) = &self.execution_verifiable_api {
+//             user_dict.insert("execution_verifiable_api", Value::from(api.to_string()));
+//         }
+//
+//         if let Some(rpc) = &self.consensus_rpc {
+//             user_dict.insert("consensus_rpc", Value::from(rpc.to_string()));
+//         }
+//
+//         if self.rpc_bind_ip.is_some() && self.rpc_port.is_some() {
+//             let rpc_socket = SocketAddr::new(self.rpc_bind_ip.unwrap(), self.rpc_port.unwrap());
+//             user_dict.insert("rpc_socket", Value::from(rpc_socket.to_string()));
+//         }
+//
+//         if let Some(ip) = self.rpc_bind_ip {
+//             user_dict.insert("rpc_bind_ip", Value::from(ip.to_string()));
+//         }
+//
+//         if let Some(port) = self.rpc_port {
+//             user_dict.insert("rpc_port", Value::from(port));
+//         }
+//
+//         if self.load_external_fallback {
+//             user_dict.insert("load_external_fallback", Value::from(true));
+//         }
+//
+//         if let Some(checkpoint) = self.checkpoint {
+//             user_dict.insert("checkpoint", Value::from(hex::encode(checkpoint)));
+//         }
+//
+//         Serialized::from(user_dict, &self.network)
+//     }
+// }
+//
+// #[derive(Args, Debug)]
+// struct LineaArgs {
+//     #[arg(short, long, default_value = "linea")]
+//     network: String,
+//     #[arg(short = 'b', long, env)]
+//     rpc_bind_ip: Option<IpAddr>,
+//     #[arg(short = 'p', long, env)]
+//     rpc_port: Option<u16>,
+//     #[arg(short, long, env, value_parser = parse_url)]
+//     execution_rpc: Option<Url>,
+// }
+//
+// impl LineaArgs {
+//     fn make_client(&self) -> LineaClient {
+//         let config_path = home_dir().unwrap().join(".helios/helios.toml");
+//         let cli_config = self.as_cli_config();
+//         let config = LineaConfig::from_file(&config_path, &self.network, &cli_config);
+//
+//         match LineaClientBuilder::new().config(config).build() {
+//             Ok(client) => client,
+//             Err(err) => {
+//                 error!(target: "helios::runner", error = %err);
+//                 exit(1);
+//             }
+//         }
+//     }
+//
+//     fn as_cli_config(&self) -> LineaCliConfig {
+//         LineaCliConfig {
+//             execution_rpc: self.execution_rpc.clone(),
+//             rpc_bind_ip: self.rpc_bind_ip,
+//             rpc_port: self.rpc_port,
+//         }
+//     }
+// }
 
 fn true_or_none(b: bool) -> Option<bool> {
     if b {

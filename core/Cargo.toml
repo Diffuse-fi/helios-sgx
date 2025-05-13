@@ -29,18 +29,18 @@ hex.workspace = true
 tracing.workspace = true
 thiserror.workspace = true
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+#[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 jsonrpsee = { workspace = true, features = ["full"] }
 openssl.workspace = true
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen-futures.workspace = true
-gloo-timers.workspace = true
-wasmtimer.workspace = true
-
-[target.wasm32-unknown-unknown.dependencies]
-parking_lot.workspace = true
+#[target.'cfg(target_arch = "wasm32")'.dependencies]
+#wasm-bindgen-futures.workspace = true
+#gloo-timers.workspace = true
+#wasmtimer.workspace = true
+#
+#[target.wasm32-unknown-unknown.dependencies]
+#parking_lot.workspace = true
 
 [dev-dependencies]
-helios-test-utils = { path = "../tests/test-utils" }
-helios-ethereum = { path = "../ethereum" }
+#helios-test-utils = { path = "../tests/test-utils" }
+#helios-ethereum = { path = "../ethereum" }

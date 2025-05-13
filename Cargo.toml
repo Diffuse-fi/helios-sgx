@@ -11,17 +11,17 @@ version = "0.8.7"
 [workspace]
 members = [
     "cli",
-    "common",
+#    "common",
     "core",
-    "ethereum",
-    "ethereum/consensus-core",
-    "opstack",
-    "helios-ts",
-    "tests/test-utils", # ToDo(@eshaan7): find a better way to include this
-    "verifiable-api/client",
-    "verifiable-api/server",
-    "verifiable-api/types",
-    "linea",
+#    "ethereum",
+#    "ethereum/consensus-core",
+#    "opstack",
+#    "helios-ts",
+#    "tests/test-utils", # ToDo(@eshaan7): find a better way to include this
+#    "verifiable-api/client",
+#    "verifiable-api/server",
+#    "verifiable-api/types",
+#    "linea",
 ]
 
 default-members = ["cli"]
@@ -41,24 +41,30 @@ sha2 = "0.9"
 bls12_381 = { version = "0.8.0", features = ["experimental"] }
 
 # execution
-alloy = { version = "0.9.1", features = [
-    "rpc-types",
-    "consensus",
-    "rlp",
-    "k256",
-    "provider-http",
-    "sol-types",
-    "network",
-    "ssz",
-    "json-rpc",
-    "signers",
-] }
-alloy-trie = "0.7.8"
-op-alloy-consensus = "0.9.0"
-op-alloy-network = "0.9.0"
-op-alloy-rpc-types = "0.9.0"
-alloy-rlp = "0.3.10"
-revm = { version = "19.7.0", default-features = false, features = [
+alloy = { version = "=0.2.0", features = [
+#    "rpc-types",
+#    "consensus",
+#    "rlp",
+#    "k256",
+#    "provider-http",
+#    "sol-types",
+#    "network",
+#    "ssz",
+#    "json-rpc",
+#    "signers",
+], default-features = false }
+
+alloy-rpc-types-eth = "0.2.0"
+alloy-consensus = "0.2.0"
+alloy-rlp = "0.3"
+alloy-primitives = { version = "0.7.7", default-features = false }
+
+alloy-trie = "0.4.1"
+#op-alloy-consensus = "0.9.0"
+#op-alloy-network = "0.9.0"
+#op-alloy-rpc-types = "0.9.0"
+#alloy-rlp = "0.3.10"
+revm = { version = "8.0.0", default-features = false, features = [
     "std",
     "serde",
     "optional_block_gas_limit",
@@ -72,8 +78,8 @@ futures = "0.3.23"
 tokio = { version = "1", features = ["rt", "sync", "macros"] }
 
 # io
-reqwest = { version = "0.12.4", features = ["json"] }
-url = { version = "2.5.2", features = ["serde"] }
+reqwest = { version = "0.12.12", default-features = false}
+url = { version = "1.0.0", features = ["serde"] }
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.85"
 
@@ -124,10 +130,10 @@ web-sys = "0.3"
 ######################################
 
 [dependencies]
-helios-common = { path = "./common" }
+#helios-common = { path = "./common" }
 helios-core = { path = "./core" }
-helios-ethereum = { path = "./ethereum" }
-helios-opstack = { path = "./opstack" }
+#helios-ethereum = { path = "./ethereum" }
+#helios-opstack = { path = "./opstack" }
 
 [dev-dependencies]
 tokio.workspace = true
@@ -138,27 +144,27 @@ dotenv = "0.15.0"
 helios-verifiable-api-server = { path = "verifiable-api/server" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-alloy = { workspace = true, features = ["full"] }
-tokio = { workspace = true, features = ["full"] }
-eyre.workspace = true
-dirs.workspace = true
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
-tracing.workspace = true
-tracing-test = "0.2.4"
-criterion = { version = "0.5.1", features = ["async_tokio", "plotters"] }
-plotters = "0.3.4"
-tempfile = "3.4.0"
-hex = "0.4.3"
-pretty_assertions = "1.4.0"
-rand = "0.8.5"
+#alloy = { workspace = true, features = ["full"] }
+#tokio = { workspace = true, features = ["full"] }
+#eyre.workspace = true
+#dirs.workspace = true
+#tracing-subscriber = { workspace = true, features = ["env-filter"] }
+#tracing.workspace = true
+#tracing-test = "0.2.4"
+#criterion = { version = "0.5.1", features = ["async_tokio", "plotters"] }
+#plotters = "0.3.4"
+#tempfile = "3.4.0"
+#hex = "0.4.3"
+#pretty_assertions = "1.4.0"
+#rand = "0.8.5"
 
 ######################################
 # Dependency Patches
 ######################################
 
 [patch.crates-io]
-ethereum_hashing = { git = "https://github.com/ncitron/ethereum_hashing", rev = "7ee70944ed4fabe301551da8c447e4f4ae5e6c35" }
-
+#ethereum_hashing = { git = "https://github.com/ncitron/ethereum_hashing", rev = "7ee70944ed4fabe301551da8c447e4f4ae5e6c35" }
+aurora-engine-modexp = { git = "https://github.com/steph-rs/aurora-engine", rev = "b468a7ce8422989d607b689a1aec8c77f17ae456" }
 ######################################
 # Profiles
 ######################################

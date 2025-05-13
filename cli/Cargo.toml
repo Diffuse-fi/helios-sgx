@@ -25,6 +25,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 # self crates
 helios-common = { path = "../common" }
 helios-core = { path = "../core" }
-helios-ethereum = { path = "../ethereum" }
-helios-opstack = { path = "../opstack" }
-helios-linea = { path = "../linea" }
+#helios-ethereum = { path = "../ethereum" }
+#helios-opstack = { path = "../opstack" }
+#helios-linea = { path = "../linea" }
